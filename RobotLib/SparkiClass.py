@@ -87,7 +87,7 @@ class SparkiClass(object):
 
     #update functions
     def updateTransforms(self):
-        self._transRtoM = transform(self._centerM[0],self._centerM[1],self.theta)
+        self._transRtoM = transform(self._centerM[0],self._centerM[1],self.theta) np.matrix[self.ceterM[0]-ICCx,self.centerM[1]-ICCy,theta] + np.matrix[Iccx,Iccy,theta]
         self._transMtoR = invert(self._transRtoM)
 
     def updateRightVelocity(self):
@@ -111,6 +111,22 @@ class SparkiClass(object):
         self.updateRightVelocity()
         self.updateLeftVelocity()
         self.updateTransforms()
+        self.ICCx
+        self.ICCy
+        if velcoityL == - VelocityR
+             ICCr = 0
+        
+        if VelL ==0 or VelR == 0
+            R = radiusOfWheelAxis
+
+        if VelL == VelR
+            #r goes to infinity
+            ICCx = _centerM[0]
+            ICCy = _centerM[1]
+        else
+            ICCx = _centerM[0] - ICCr * math.sin(theta)
+            ICCy = _centerM[1[ + ICCr * math.cos(theta)
+        
         
     def testPrint(self):
         print ("it worked") 
