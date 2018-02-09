@@ -36,7 +36,9 @@ class SparkiClass(object):
 
         self._ICCx = 0
         self._ICCy = 0
-        self._ICCr = 0
+        self._ICCr = vec(0.,0.)
+
+        self._moveMatrix = transform(0,0,0)
 
         self._transRtoM = transform(width/2.,height/2.,self._theta)
         self._transStoR = transform(2.5,0.,0.)
@@ -72,10 +74,19 @@ class SparkiClass(object):
     def sonarDistance(self,distance):
         self._sonarReadingS[0] = distance
 
-    
-    def _updateCenter(self,time_delta):
+    def _calcICC(self):
+        ICC = mul(self._transRtoM,self._ICCr)
+        self._ICCx = ICC[0]
+        self._ICCy = ICC[1]
+
+    def _updateCenterLin(self,time_delta):
+        self._centerM[0] += self.velocity * math.cos(self._theta) * time_delta
+        self._centerM[1] += self.velocity * math.sin(self._theta) * time_delta
+
+    def _updateCenterICC(self,time_delta):
         s = math.sin(self.omega * time_delta)
         c = math.cos(self.omega * time_delta) 
+        #create move matrix by hand
         move = np.matrix([[c,-s,0],[s,c,0],[0,0,1]])
         mult = np.matrix([[self._centerM[0]-self._ICCx],[self._centerM[1]-self._ICCy],[self._theta]])
         add = np.matrix([[self._ICCx],[self._ICCy],[self.omega * time_delta]])
@@ -84,20 +95,19 @@ class SparkiClass(object):
         self._centerM[1] = answer[1]
         self._theta += self.omega * time_delta #had to use this do to numpy conversion errors from matrix
     
-    
     # circumference of wheel = 15.71 cm
     # 4096 steps per revolution.
     # 1 step =.0038 cm /step
     # max speed is 1000 steps per sec or 3.8 cm per sec
     # 90% is 900 or 3.42 cm per sec
     def getCommandLeft(self):
-        if self._leftVelocity > (sizeOfOneStep * 100):
+        if self._leftVelocity > (sizeOfOneStep * 1000):
             return 100
         else:
             return int(self._leftVelocity / sizeOfOneStep)
 
     def getCommandRight(self):
-        if self._rightVelocity > (sizeOfOneStep * 100):
+        if self._rightVelocity > (sizeOfOneStep * 1000):
             return 100
         else: 
             return int(self._rightVelocity / sizeOfOneStep)
@@ -112,52 +122,51 @@ class SparkiClass(object):
         self._rightVelocity = self.velocity + (self.omega * radiusOfWheelAxis )
         if self._rightVelocity < 0:
             self.rightWheelDir = 1
-	else:
-	    self.rightWheelDir = 0 
+        else:
+            self.rightWheelDir = 0 
 
     def updateLeftVelocity(self):
         self._leftVelocity = self.velocity - (self.omega * radiusOfWheelAxis )
         if self._leftVelocity < 0:
             self.leftWheelDir = 1
-	else: 
-	    self.leftWheelDir = 0
+        else: 
+            self.leftWheelDir = 0
 
     def updateCenter(self,time_delta):
-	
+ 
         self.updateRightVelocity()
         self.updateLeftVelocity()
 
-	# Update the position for the center of the robot        
-	self._centerM[0] += self.velocity * math.cos(self._theta) * time_delta
-	self._centerM[1] += self.velocity * math.sin(self._theta) * time_delta
-	
-	# Vl = - Vr, R = 0 (rotation in place)
-	if (self._leftVelocity == -self._rightVelocity):
-		self._ICCr = 0
+        # Vl = - Vr, R = 0 (rotation in place)
+        if (self._leftVelocity == self._rightVelocity and self.leftWheelDir != self.rightWheelDir):
+            self._ICCr = vec(0.,0.)
+            self._calcICC()
+            self._updateCenterICC(time_delta)
 
-	# Vl = 0 or Vr = 0, R = (l / 2) (rotation about a wheel) 
-	if (self._leftVelocity == 0 or self._rightVelocity == 0):
-		self._ICCr = 8.51 / 2
+        # Vl = 0 or Vr = 0, R = (l / 2) (rotation about a wheel) 
+        elif (self._leftVelocity == 0 or self._rightVelocity == 0):
+            self._ICCr = vec(0., 8.51 / 2)
+            self._calcICC()
+            self._updateCenterICC(time_delta)
 
-	# Vl = Vr, linear motion (R -> infinity)
-	if (self._leftVelocity == self._rightVelocity):
-		self._ICCx = self._centerM[0] 
-		self._ICCy = self._centerM[1]
+        # Vl = Vr, linear motion (R -> infinity)
+        elif (self._leftVelocity == self._rightVelocity):
+            self._updateCenterLin(time_delta)
 
-	# Base case 	
-	else:
-		# R = (l / 2) * [ (Vl + Vr) / (Vr - Vl) ] 
-		self._ICCr = (8.51 / 2) * ( (self._leftVelocity + self._rightVelocity) / (self._rightVelocity - self._leftVelocity) )
+        # Base case  
+        else:
+            # R = (l / 2) * [ (Vl + Vr) / (Vr - Vl) ] 
+            self._ICCr = vec(0.,(8.51 / 2) * ((self._leftVelocity + self._rightVelocity)/(self._rightVelocity - self._leftVelocity)))
 
-		# ICC = [x - R * sin(theta), y + R * cos(theta)] 
-		self._ICCx = self._centerM[0] - self._ICCr * math.sin(self._theta)
-		self._ICCy = self._centerM[1] + self._ICCr * math.cos(self._theta)
-	
-	# Output dead reckoning information 
-	print "Cx: %.1f" % float(self._centerM[0]), "Cy: %.1f  " % float(self._centerM[1]), "v:", self.velocity, "w:", self.omega, "theta: %.3f  " % self._theta, "Vr: %.2f" % self._rightVelocity, "Vl: %.2f  " % self._leftVelocity
-	print "  ICCx: %.1f" % float(self._ICCx), "ICCy: %.1f  " % float(self._ICCy), "(Cx - ICCx): %.1f" % float(self._centerM[0] - self._ICCx), "(Cy - ICCy): %.1f" % float(self._centerM[1] - self._ICCy), "\n"
-	
-	self._updateCenter(time_delta)
+            self._calcICC()
+            self._updateCenterICC(time_delta)
+ 
+        # Output dead reckoning information 
+        print( "Cx: %.1f" % float(self._centerM[0]), "Cy: %.1f  " % float(self._centerM[1]), "v:", self.velocity, "w:", 
+            self.omega, "theta: %.3f  " % self._theta, "Vr: %.2f" % self._rightVelocity, "Vl: %.2f  " % self._leftVelocity)
+        print ("  ICCx: %.1f" % float(self._ICCx), "ICCy: %.1f  " % float(self._ICCy), "(Cx - ICCx): %.1f" % float(
+            self._centerM[0] - self._ICCx), "(Cy - ICCy): %.1f" % float(self._centerM[1] - self._ICCy), "\n")
+ 
         self.updateTransforms()
 
     #call draw to draw your robot including sonar

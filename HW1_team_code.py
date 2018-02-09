@@ -34,23 +34,23 @@ class MyFrontEnd(FrontEnd):
     def keydown(self,key):
         # see https://www.pygame.org/docs/ref/key.html for pygame key names, such as pygame.K_UP 
         #set velocities based on pressing of keys. 90% forward and back. small angular velocity to test
-	if key == 273: 
-   	    if simulationONLY:
+        if key == 273: 
+            if simulationONLY:
                 self.MySparkiClass.velocity += 15
             else:
                 self.MySparkiClass.velocity += 3.42
-	if key == 274:
-	    if simulationONLY:
+        if key == 274:
+            if simulationONLY:
                 self.MySparkiClass.velocity -= 15
             else:
                 self.MySparkiClass.velocity -= 3.42
-	if key == 275:
-	    if simulationONLY:
+        if key == 275:
+            if simulationONLY:
                 self.MySparkiClass.omega -= .8
             else:
                 self.MySparkiClass.omega -= .2
-	if key == 276:
-	    if simulationONLY:
+        if key == 276:
+            if simulationONLY:
                 self.MySparkiClass.omega += .8
             else:
                 self.MySparkiClass.omega += .2
@@ -59,10 +59,10 @@ class MyFrontEnd(FrontEnd):
     def keyup(self,key):
         # see https://www.pygame.org/docs/ref/key.html for pygame key names, such as pygame.K_UP
         #set velocities to 0 on release of keys
-	if key == 273:
-	    self.MySparkiClass.velocity = 0
-	if key == 274:
-	    self.MySparkiClass.velocity = 0
+        if key == 273:
+            self.MySparkiClass.velocity = 0
+        if key == 274:
+            self.MySparkiClass.velocity = 0
         if key == 275:
             self.MySparkiClass.omega = 0
         if key == 276: 
