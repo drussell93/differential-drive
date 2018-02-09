@@ -7,7 +7,7 @@ import argparse
 from RobotLib.FrontEnd import *
 from RobotLib.IO import *
 import numpy as np
-from RobotLib.SparkiClass import *
+from SparkiClass import *
 
 #if using only simulation, allows sparki to move faster
 simulationONLY = True
@@ -34,41 +34,40 @@ class MyFrontEnd(FrontEnd):
     def keydown(self,key):
         # see https://www.pygame.org/docs/ref/key.html for pygame key names, such as pygame.K_UP 
         #set velocities based on pressing of keys. 90% forward and back. small angular velocity to test
-        if ( pygame.key.get_pressed()[pygame.K_UP] != 0 ):    
-            print('up pressed')
-            if simulationONLY :
-                self.MySparkiClass.velocity = 15
+	if key == 273: 
+   	    if simulationONLY:
+                self.MySparkiClass.velocity += 15
             else:
-                self.MySparkiClass.velocity = 3.42
-        if ( pygame.key.get_pressed()[pygame.K_DOWN] != 0):
-            print('down pressed')
-            if simulationONLY :
-                self.MySparkiClass.velocity = -15
+                self.MySparkiClass.velocity += 3.42
+	if key == 274:
+	    if simulationONLY:
+                self.MySparkiClass.velocity -= 15
             else:
-                self.MySparkiClass.velocity = -3.42
-        if ( pygame.key.get_pressed()[pygame.K_LEFT] != 0):
-            print('left pressed')
-            if simulationONLY :
-                self.MySparkiClass.omega = .8
+                self.MySparkiClass.velocity -= 3.42
+	if key == 275:
+	    if simulationONLY:
+                self.MySparkiClass.omega -= .8
             else:
-                self.MySparkiClass.omega = .2
-        if ( pygame.key.get_pressed()[pygame.K_RIGHT] != 0 ):
-            print('right pressed')
-            if simulationONLY :
-                self.MySparkiClass.omega = -.8
+                self.MySparkiClass.omega -= .2
+	if key == 276:
+	    if simulationONLY:
+                self.MySparkiClass.omega += .8
             else:
-                self.MySparkiClass.omega = -.2
+                self.MySparkiClass.omega += .2
+
 
     def keyup(self,key):
         # see https://www.pygame.org/docs/ref/key.html for pygame key names, such as pygame.K_UP
         #set velocities to 0 on release of keys
-        if ( pygame.key.get_pressed()[pygame.K_UP] == 0 and pygame.key.get_pressed()[pygame.K_DOWN] == 0):
-            print('linear released')
-            self.MySparkiClass.velocity = 0
-        
-        if ( pygame.key.get_pressed()[pygame.K_LEFT] == 0 and pygame.key.get_pressed()[pygame.K_RIGHT] == 0 ):
-            print('angular released')
+	if key == 273:
+	    self.MySparkiClass.velocity = 0
+	if key == 274:
+	    self.MySparkiClass.velocity = 0
+        if key == 275:
             self.MySparkiClass.omega = 0
+        if key == 276: 
+            self.MySparkiClass.omega = 0
+ 
         
     def draw(self,surface):
         # draw robot here
@@ -101,8 +100,8 @@ class MyFrontEnd(FrontEnd):
         # if connected to sparki, get sonar reading and send commands to sparki
         if simulationONLY != True:
             self.MySparkiClass.sonarDistance(self.sparki.dist) #will show a point if reading 0
-            self.sparki.send_command(self.MySparkiClass.getCommandLeft(),self.MySparkiClass.leftWheelDir,
-                self.MySparkiClass.getCommandRight(),self.MySparkiClass.rightWheelDir,0,0)
+            self.sparki.send_command(abs(self.MySparkiClass.getCommandLeft()),self.MySparkiClass.leftWheelDir,
+                abs(self.MySparkiClass.getCommandRight()),self.MySparkiClass.rightWheelDir,0,0)
         
         # updates sparki's location for simulation
         self.MySparkiClass.updateCenter(time_delta)
@@ -116,9 +115,6 @@ class MyFrontEnd(FrontEnd):
             # (sparki, theta in degrees, power)
             self.MySparkiClass.rotate(self.sparki,90,100)
             self.MySparkiClass.hasRun = True #do not change this or you will be locked out from system pause
-        
-
-
 
 def main():
     # parse arguments

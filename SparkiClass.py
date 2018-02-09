@@ -2,10 +2,10 @@ import numpy as np
 import math
 import pygame
 import time
-from .Math import *
-from .IO import *
+from RobotLib.Math import *
+from RobotLib.IO import *
 
-radiusOfWheelAxis = 8.41 / 2    #cm
+radiusOfWheelAxis = 8.51 / 2    #cm
 sizeOfOneStep = .0038           #cm, can change this if the radius is different
                                 #2 * pi * radius / 4096
 
@@ -83,8 +83,6 @@ class SparkiClass(object):
         self._centerM[0] = answer[0]
         self._centerM[1] = answer[1]
         self._theta += self.omega * time_delta #had to use this do to numpy conversion errors from matrix
-                                                #self._theta = answer[2]
-
     
     
     # circumference of wheel = 15.71 cm
@@ -112,61 +110,55 @@ class SparkiClass(object):
 
     def updateRightVelocity(self):
         self._rightVelocity = self.velocity + (self.omega * radiusOfWheelAxis )
-        if self._rightVelocity < 0 :
-            self._rightVelocity = abs(self._rightVelocity)
+        if self._rightVelocity < 0:
             self.rightWheelDir = 1
+	else:
+	    self.rightWheelDir = 0 
 
     def updateLeftVelocity(self):
         self._leftVelocity = self.velocity - (self.omega * radiusOfWheelAxis )
-        if self._leftVelocity < 0 :
-            self._leftVelocity = abs(self._leftVelocity)
+        if self._leftVelocity < 0:
             self.leftWheelDir = 1
+	else: 
+	    self.leftWheelDir = 0
 
-#LOOK HERE
     def updateCenter(self,time_delta):
-        rightFlag = 1
-        leftFlag = 1
+	
         self.updateRightVelocity()
         self.updateLeftVelocity()
-        #need these because update velocity removes sign, this put it back in a way
-        if self.leftWheelDir == 1:
-            leftFlag = -1
-        else:
-            leftFlag = 1
 
-        if self.rightWheelDir == 1:
-            rightFlag = -1
-        else:
-            rightFlag = 1
+	# Update the position for the center of the robot        
+	self._centerM[0] += self.velocity * math.cos(self._theta) * time_delta
+	self._centerM[1] += self.velocity * math.sin(self._theta) * time_delta
+	
+	# Vl = - Vr, R = 0 (rotation in place)
+	if (self._leftVelocity == -self._rightVelocity):
+		self._ICCr = 0
 
-        if (leftFlag * self._leftVelocity) == (- rightFlag * self._rightVelocity):
-             self._ICCr = 0
-             self._ICCx = self._centerM[0]
-             self._ICCy = self._centerM[1]       
-        elif self._leftVelocity == self._rightVelocity:
-            #r goes to infinity
-            #self._ICCr = 9999
-            #self._ICCx = self._centerM[0]
-            #self._ICCy = self._centerM[1]
-            
-            #set velocities from old equations due to no ICC
-            self._centerM[0] += self.velocity * math.cos(self._theta) * time_delta
-            self._centerM[1] += self.velocity * math.sin(self._theta) * time_delta
-        else:
-            if self._rightVelocity == 0 or self._leftVelocity == 0 :
-                self._ICCr = radiusOfWheelAxis
-            else:
-                self._ICCr = radiusOfWheelAxis * ((leftFlag * self._leftVelocity + rightFlag * self._rightVelocity) /
-                    (rightFlag * self._rightVelocity - leftFlag * self._leftVelocity))
-            self._ICCx = self._centerM[0] - self._ICCr * math.sin(self._theta)
-            self._ICCy = self._centerM[1] + self._ICCr * math.cos(self._theta)
-            self._updateCenter(time_delta)
-        
+	# Vl = 0 or Vr = 0, R = (l / 2) (rotation about a wheel) 
+	if (self._leftVelocity == 0 or self._rightVelocity == 0):
+		self._ICCr = 8.51 / 2
+
+	# Vl = Vr, linear motion (R -> infinity)
+	if (self._leftVelocity == self._rightVelocity):
+		self._ICCx = self._centerM[0] 
+		self._ICCy = self._centerM[1]
+
+	# Base case 	
+	else:
+		# R = (l / 2) * [ (Vl + Vr) / (Vr - Vl) ] 
+		self._ICCr = (8.51 / 2) * ( (self._leftVelocity + self._rightVelocity) / (self._rightVelocity - self._leftVelocity) )
+
+		# ICC = [x - R * sin(theta), y + R * cos(theta)] 
+		self._ICCx = self._centerM[0] - self._ICCr * math.sin(self._theta)
+		self._ICCy = self._centerM[1] + self._ICCr * math.cos(self._theta)
+	
+	# Output dead reckoning information 
+	print "Cx: %.1f" % float(self._centerM[0]), "Cy: %.1f  " % float(self._centerM[1]), "v:", self.velocity, "w:", self.omega, "theta: %.3f  " % self._theta, "Vr: %.2f" % self._rightVelocity, "Vl: %.2f  " % self._leftVelocity
+	print "  ICCx: %.1f" % float(self._ICCx), "ICCy: %.1f  " % float(self._ICCy), "(Cx - ICCx): %.1f" % float(self._centerM[0] - self._ICCx), "(Cy - ICCy): %.1f" % float(self._centerM[1] - self._ICCy), "\n"
+	
+	self._updateCenter(time_delta)
         self.updateTransforms()
-        #we can't rotate in place.  is this intented.  No velocity will mean no
-        
-    def testPrint(self):
-        print ("it worked") 
 
     #call draw to draw your robot including sonar
     def draw(self,surface):
