@@ -10,10 +10,10 @@ import numpy as np
 from RobotLib.SparkiClass import *
 
 #if using only simulation, allows sparki to move faster
-simulationONLY = False
+simulationONLY = True
 
 #if using the move commands to move sparki a set distance
-movingSparkiSetDistance = True
+movingSparkiSetDistance = False
 
 class MyFrontEnd(FrontEnd):
     """ Custom sub-class of FrontEnd

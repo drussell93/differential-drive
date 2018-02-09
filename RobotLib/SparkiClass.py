@@ -13,10 +13,10 @@ class SparkiClass(object):
 
     def __init__(self,width=256,height=256,theta=0):
         # _indicates should not change straight up, use functions
-        # no _ is ok to change on their own
+        # no _ is ok to change on their own, i think
         self.velocity = 0.
         self.omega = 0.
-        self.theta = 0.
+        self._theta = 0.
 
         self._sonarReadingS = vec(25.,0.)
 
@@ -31,15 +31,21 @@ class SparkiClass(object):
         self._frontLeftR = vec(5,4.5)
         self._headLocationR = vec(2.5,0.)
         self._centerR = vec(0.,0.)
-    
+
         self._centerM = vec(width/2.,height/2.)
 
-        self._transRtoM = transform(width/2.,height/2.,self.theta)
+        self._ICCx = 0
+        self._ICCy = 0
+        self._ICCr = 0
+
+        self._transRtoM = transform(width/2.,height/2.,self._theta)
         self._transStoR = transform(2.5,0.,0.)
         self._transMtoR = invert(self._transRtoM) 
         self._transRtoS = invert(self._transStoR)
+        self._moveR = transform(width/2.,height/2.,self._theta)
         
         self.hasRun = False
+
     
     #getters for points in map frame
     def backRightM(self):
@@ -66,7 +72,21 @@ class SparkiClass(object):
     def sonarDistance(self,distance):
         self._sonarReadingS[0] = distance
 
+    
+    def _updateCenter(self,time_delta):
+        s = math.sin(self.omega * time_delta)
+        c = math.cos(self.omega * time_delta) 
+        move = np.matrix([[c,-s,0],[s,c,0],[0,0,1]])
+        mult = np.matrix([[self._centerM[0]-self._ICCx],[self._centerM[1]-self._ICCy],[self._theta]])
+        add = np.matrix([[self._ICCx],[self._ICCy],[self.omega * time_delta]])
+        answer = move * mult + add
+        self._centerM[0] = answer[0]
+        self._centerM[1] = answer[1]
+        self._theta += self.omega * time_delta #had to use this do to numpy conversion errors from matrix
+                                                #self._theta = answer[2]
 
+    
+    
     # circumference of wheel = 15.71 cm
     # 4096 steps per revolution.
     # 1 step =.0038 cm /step
@@ -87,46 +107,63 @@ class SparkiClass(object):
 
     #update functions
     def updateTransforms(self):
-        self._transRtoM = transform(self._centerM[0],self._centerM[1],self.theta) np.matrix[self.ceterM[0]-ICCx,self.centerM[1]-ICCy,theta] + np.matrix[Iccx,Iccy,theta]
+        self._transRtoM = transform(self._centerM[0],self._centerM[1],self._theta)
         self._transMtoR = invert(self._transRtoM)
 
     def updateRightVelocity(self):
-        self._rightVelocity = self.velocity + (self.omega * (8.52/2) )
+        self._rightVelocity = self.velocity + (self.omega * radiusOfWheelAxis )
         if self._rightVelocity < 0 :
             self._rightVelocity = abs(self._rightVelocity)
             self.rightWheelDir = 1
 
     def updateLeftVelocity(self):
-        self._leftVelocity = self.velocity - (self.omega * (8.52/2) )
+        self._leftVelocity = self.velocity - (self.omega * radiusOfWheelAxis )
         if self._leftVelocity < 0 :
             self._leftVelocity = abs(self._leftVelocity)
             self.leftWheelDir = 1
 
+#LOOK HERE
     def updateCenter(self,time_delta):
-        self.theta += self.omega * time_delta
-        self._centerM[0] += self.velocity * math.cos(self.theta) * time_delta
-        self._centerM[1] += self.velocity * math.sin(self.theta) * time_delta
-        #create a move matrix, then multiply by center?
-        #what is the radius? how does that matter?
+        rightFlag = 1
+        leftFlag = 1
         self.updateRightVelocity()
         self.updateLeftVelocity()
-        self.updateTransforms()
-        self.ICCx
-        self.ICCy
-        if velcoityL == - VelocityR
-             ICCr = 0
-        
-        if VelL ==0 or VelR == 0
-            R = radiusOfWheelAxis
+        #need these because update velocity removes sign, this put it back in a way
+        if self.leftWheelDir == 1:
+            leftFlag = -1
+        else:
+            leftFlag = 1
 
-        if VelL == VelR
+        if self.rightWheelDir == 1:
+            rightFlag = -1
+        else:
+            rightFlag = 1
+
+        if (leftFlag * self._leftVelocity) == (- rightFlag * self._rightVelocity):
+             self._ICCr = 0
+             self._ICCx = self._centerM[0]
+             self._ICCy = self._centerM[1]       
+        elif self._leftVelocity == self._rightVelocity:
             #r goes to infinity
-            ICCx = _centerM[0]
-            ICCy = _centerM[1]
-        else
-            ICCx = _centerM[0] - ICCr * math.sin(theta)
-            ICCy = _centerM[1[ + ICCr * math.cos(theta)
+            #self._ICCr = 9999
+            #self._ICCx = self._centerM[0]
+            #self._ICCy = self._centerM[1]
+            
+            #set velocities from old equations due to no ICC
+            self._centerM[0] += self.velocity * math.cos(self._theta) * time_delta
+            self._centerM[1] += self.velocity * math.sin(self._theta) * time_delta
+        else:
+            if self._rightVelocity == 0 or self._leftVelocity == 0 :
+                self._ICCr = radiusOfWheelAxis
+            else:
+                self._ICCr = radiusOfWheelAxis * ((leftFlag * self._leftVelocity + rightFlag * self._rightVelocity) /
+                    (rightFlag * self._rightVelocity - leftFlag * self._leftVelocity))
+            self._ICCx = self._centerM[0] - self._ICCr * math.sin(self._theta)
+            self._ICCy = self._centerM[1] + self._ICCr * math.cos(self._theta)
+            self._updateCenter(time_delta)
         
+        self.updateTransforms()
+        #we can't rotate in place.  is this intented.  No velocity will mean no
         
     def testPrint(self):
         print ("it worked") 
