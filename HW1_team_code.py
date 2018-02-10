@@ -10,7 +10,7 @@ import numpy as np
 from SparkiClass import *
 
 #if using only simulation, allows sparki to move faster
-simulationONLY = True
+simulationONLY = False
 
 #if using the move commands to move sparki a set distance
 movingSparkiSetDistance = False
@@ -38,22 +38,22 @@ class MyFrontEnd(FrontEnd):
             if simulationONLY:
                 self.MySparkiClass.velocity += 15
             else:
-                self.MySparkiClass.velocity += 3.42
+                self.MySparkiClass.velocity += 3.04
         if key == 274:
             if simulationONLY:
                 self.MySparkiClass.velocity -= 15
             else:
-                self.MySparkiClass.velocity -= 3.42
+                self.MySparkiClass.velocity -= 3.04
         if key == 275:
             if simulationONLY:
-                self.MySparkiClass.omega -= .8
+                self.MySparkiClass.omega -= 1
             else:
-                self.MySparkiClass.omega -= .2
+                self.MySparkiClass.omega -= .8
         if key == 276:
             if simulationONLY:
-                self.MySparkiClass.omega += .8
+                self.MySparkiClass.omega += 1
             else:
-                self.MySparkiClass.omega += .2
+                self.MySparkiClass.omega += .8
 
 
     def keyup(self,key):
@@ -100,9 +100,9 @@ class MyFrontEnd(FrontEnd):
         # if connected to sparki, get sonar reading and send commands to sparki
         if simulationONLY != True:
             self.MySparkiClass.sonarDistance(self.sparki.dist) #will show a point if reading 0
-            self.sparki.send_command(abs(self.MySparkiClass.getCommandLeft()),self.MySparkiClass.leftWheelDir,
-                abs(self.MySparkiClass.getCommandRight()),self.MySparkiClass.rightWheelDir,0,0)
-        
+            self.sparki.send_command(self.MySparkiClass.getCommandLeft(),self.MySparkiClass.leftWheelDir,
+                self.MySparkiClass.getCommandRight(),self.MySparkiClass.rightWheelDir,0,0)
+             
         # updates sparki's location for simulation
         self.MySparkiClass.updateCenter(time_delta)
         
@@ -111,9 +111,9 @@ class MyFrontEnd(FrontEnd):
         # can possibly be expanded later
         if movingSparkiSetDistance == True and self.MySparkiClass.hasRun == False:
             # (sparki, dist in cm, power)
-            self.MySparkiClass.move(self.sparki,10,100)
+            self.MySparkiClass.move(self.sparki,10,90)
             # (sparki, theta in degrees, power)
-            self.MySparkiClass.rotate(self.sparki,90,100)
+            self.MySparkiClass.rotate(self.sparki,90,90)
             self.MySparkiClass.hasRun = True #do not change this or you will be locked out from system pause
 
 def main():

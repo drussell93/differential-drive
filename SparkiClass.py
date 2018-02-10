@@ -104,13 +104,13 @@ class SparkiClass(object):
         if self._leftVelocity > (sizeOfOneStep * 1000):
             return 100
         else:
-            return int(self._leftVelocity / sizeOfOneStep)
+            return abs(int(self._leftVelocity / 3.8 * 100))
 
     def getCommandRight(self):
         if self._rightVelocity > (sizeOfOneStep * 1000):
             return 100
         else: 
-            return int(self._rightVelocity / sizeOfOneStep)
+            return abs(int(self._rightVelocity / 3.8 * 100))
 
 
     #update functions
@@ -121,16 +121,16 @@ class SparkiClass(object):
     def updateRightVelocity(self):
         self._rightVelocity = self.velocity + (self.omega * radiusOfWheelAxis )
         if self._rightVelocity < 0:
-            self.rightWheelDir = 1
+            self.rightWheelDir = 0
         else:
-            self.rightWheelDir = 0 
+            self.rightWheelDir = 1 
 
     def updateLeftVelocity(self):
         self._leftVelocity = self.velocity - (self.omega * radiusOfWheelAxis )
         if self._leftVelocity < 0:
-            self.leftWheelDir = 1
-        else: 
             self.leftWheelDir = 0
+        else: 
+            self.leftWheelDir = 1
 
     def updateCenter(self,time_delta):
  
