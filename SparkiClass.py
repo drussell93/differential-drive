@@ -226,10 +226,6 @@ class SparkiClass(object):
         else:
             leftPower = power
             rightPower = 0   
-
-        #will not rotate more than 360 degrees
-        if theta > 360 or theta < -360:
-            theta = theta % 360
              
         #distance the wheel should move to get desired angle
         arcLength = 2. * math.pi * radiusOfWheelAxis * (abs(theta)/360)
