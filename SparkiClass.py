@@ -151,6 +151,8 @@ class SparkiClass(object):
 
         # Vl = Vr, linear motion (R -> infinity)
         elif (self._leftVelocity == self._rightVelocity):
+            self._ICCr = vec(0.,0.)
+            self._calcICC()
             self._updateCenterLin(time_delta)
 
         # Base case  
@@ -162,7 +164,7 @@ class SparkiClass(object):
             self._updateCenterICC(time_delta)
  
         # Output dead reckoning information 
-        print( "Cx: %.1f" % float(self._centerM[0]), "Cy: %.1f  " % float(self._centerM[1]), "v:", self.velocity, "w:", 
+        print ("Cx: %.1f" % float(self._centerM[0]), "Cy: %.1f  " % float(self._centerM[1]), "v:", self.velocity, "w:", 
             self.omega, "theta: %.3f  " % self._theta, "Vr: %.2f" % self._rightVelocity, "Vl: %.2f  " % self._leftVelocity)
         print ("  ICCx: %.1f" % float(self._ICCx), "ICCy: %.1f  " % float(self._ICCy), "(Cx - ICCx): %.1f" % float(
             self._centerM[0] - self._ICCx), "(Cy - ICCy): %.1f" % float(self._centerM[1] - self._ICCy), "\n")
