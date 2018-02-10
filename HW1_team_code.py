@@ -10,7 +10,7 @@ import numpy as np
 from SparkiClass import *
 
 #if using only simulation, allows sparki to move faster
-simulationONLY = False
+simulationONLY = True
 
 #if using the move commands to move sparki a set distance
 movingSparkiSetDistance = False
